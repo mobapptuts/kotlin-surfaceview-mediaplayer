@@ -10,9 +10,54 @@ import android.view.Surface
 import android.view.SurfaceHolder
 import android.view.View
 import android.widget.FrameLayout
+import android.widget.MediaController
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlin.concurrent.thread
 
-class MainActivity : AppCompatActivity(), SurfaceHolder.Callback {
+class MainActivity : AppCompatActivity(), SurfaceHolder.Callback, MediaController.MediaPlayerControl {
+    override fun isPlaying(): Boolean {
+        return mediaPlayer.isPlaying
+    }
+
+    override fun canSeekForward(): Boolean {
+        return true
+    }
+
+    override fun getDuration(): Int {
+        return mediaPlayer.duration
+    }
+
+    override fun pause() {
+        mediaPlayer.pause()
+    }
+
+    override fun getBufferPercentage(): Int {
+        return 0
+    }
+
+    override fun seekTo(p0: Int) {
+        mediaPlayer.seekTo(p0)
+    }
+
+    override fun getCurrentPosition(): Int {
+        return mediaPlayer.currentPosition
+    }
+
+    override fun canSeekBackward(): Boolean {
+        return true
+    }
+
+    override fun start() {
+        mediaPlayer.start()
+    }
+
+    override fun getAudioSessionId(): Int {
+        return mediaPlayer.audioSessionId
+    }
+
+    override fun canPause(): Boolean {
+        return true
+    }
 
     override fun surfaceChanged(p0: SurfaceHolder?, p1: Int, p2: Int, p3: Int) {
     }
@@ -26,6 +71,7 @@ class MainActivity : AppCompatActivity(), SurfaceHolder.Callback {
         prepareMediaPlayer()
     }
 
+    private lateinit var mediaController: MediaController
     private lateinit var mediaPlayer: MediaPlayer
     private var playbackPosition = 0
     private val rtspUrl = "rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov"
@@ -36,6 +82,10 @@ class MainActivity : AppCompatActivity(), SurfaceHolder.Callback {
 
         val holder = surfaceView.holder
         holder.addCallback(this)
+
+        surfaceView.setOnClickListener {
+            displayControllerPlayer()
+        }
     }
 
     override fun onPause() {
@@ -59,6 +109,7 @@ class MainActivity : AppCompatActivity(), SurfaceHolder.Callback {
     }
 
     private fun setupMediaPlayer(surface: Surface) {
+        mediaController = MediaController(this)
         progressBar.visibility = View.VISIBLE
         mediaPlayer = MediaPlayer()
         mediaPlayer.setSurface(surface)
@@ -94,6 +145,9 @@ class MainActivity : AppCompatActivity(), SurfaceHolder.Callback {
         }
 
         mediaPlayer.setOnPreparedListener {
+            mediaController.setMediaPlayer(this)
+            mediaController.setAnchorView(surfaceContainer)
+            displayControllerPlayer()
             progressBar.visibility = View.INVISIBLE
             mediaPlayer.seekTo(playbackPosition)
             mediaPlayer.start()
@@ -101,6 +155,15 @@ class MainActivity : AppCompatActivity(), SurfaceHolder.Callback {
 
         mediaPlayer.setOnVideoSizeChangedListener { player, width, height ->
             setSurfaceDimensions(player, width, height)
+        }
+    }
+
+    private fun displayControllerPlayer() {
+        thread(start=true) {
+            runOnUiThread {
+                mediaController.isEnabled = true
+                mediaController.show()
+            }
         }
     }
 

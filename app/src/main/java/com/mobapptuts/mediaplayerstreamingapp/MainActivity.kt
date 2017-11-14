@@ -6,6 +6,7 @@ import android.media.MediaPlayer
 import android.net.Uri
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Handler
 import android.view.Surface
 import android.view.SurfaceHolder
 import android.view.View
@@ -83,9 +84,6 @@ class MainActivity : AppCompatActivity(), SurfaceHolder.Callback, MediaControlle
         val holder = surfaceView.holder
         holder.addCallback(this)
 
-        surfaceView.setOnClickListener {
-            displayControllerPlayer()
-        }
     }
 
     override fun onPause() {
@@ -147,24 +145,23 @@ class MainActivity : AppCompatActivity(), SurfaceHolder.Callback, MediaControlle
         mediaPlayer.setOnPreparedListener {
             mediaController.setMediaPlayer(this)
             mediaController.setAnchorView(surfaceContainer)
-            displayControllerPlayer()
             progressBar.visibility = View.INVISIBLE
             mediaPlayer.seekTo(playbackPosition)
             mediaPlayer.start()
+            displayMediaController()
         }
 
         mediaPlayer.setOnVideoSizeChangedListener { player, width, height ->
             setSurfaceDimensions(player, width, height)
         }
-    }
 
-    private fun displayControllerPlayer() {
-        thread(start=true) {
-            runOnUiThread {
-                mediaController.isEnabled = true
-                mediaController.show()
-            }
+        surfaceView.setOnClickListener {
+            displayMediaController()
         }
     }
 
+    private fun displayMediaController() {
+        mediaController.isEnabled = true
+        mediaController.show()
+    }
 }
